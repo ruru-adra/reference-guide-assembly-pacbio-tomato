@@ -92,6 +92,43 @@ bcftools stats 0001.vcf.gz | grep "number of SNPs"
 ##filter
 bcftools filter -e 'QUAL < 30 || DP < 10' 0002.vcf.gz -O z -o MT1_cc.vcf.gz
 
+##for viewing
+# Count total variants
+bcftools view -H MT1_filtered.vcf.gz | wc -l
+
+# View only SNPs
+bcftools view -v snps MT1_filtered.vcf.gz | less
+
+# View only indels
+bcftools view -v indels MT1_filtered.vcf.gz | less
+
+# Quick stats summary
+bcftools stats MT1_filtered.vcf.gz | grep "^SN"
+
+##convert vcf to txt
+gatk VariantsToTable \
+  -V MT1_filtered.vcf.gz \
+  -F CHROM \
+  -F POS \
+  -F REF \
+  -F ALT \
+  -F QUAL \
+  -F FILTER \
+  -F TYPE \
+  -F DP \
+  -GF GT \
+  -GF GQ \
+  -GF DP \
+  -O MT1_variants_table.txt
+
+##tab separated data
+# Extract main columns only: CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
+bcftools view -H MT1_filtered.vcf.gz | cut -f1-8 > MT1_filtered.txt
+
+# With header line
+echo -e "CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO" > MT1_filtered.txt
+bcftools view -H MT1_filtered.vcf.gz | cut -f1-8 >> MT1_filtered.txt
+
 **********************************structural variant detection**************************************************
 ###installation
 ##reference guided-assembly pipeline
