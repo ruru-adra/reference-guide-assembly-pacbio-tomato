@@ -1,0 +1,148 @@
+#reference mapping
+
+-gold standard ref genome- ensembl-Solanum lycopersicum cv. Heinz 1706 
+-SV detection from mapped reads (Sniffles2)
+
+#pangenome analysis
+
+#de novo assembly for synteny analysis
+
+##installation
+#best practices to create install is to env
+conda create -n pbmm2_env -c bioconda pbmm2
+
+##if nak run pbmm2
+micromamba activate pbmm2_env
+
+##clair3
+mamba create -n clair3_v2 -c conda-forge -c bioconda python=3.11 samtools whatshap parallel zstd xz zlib bzip2 automake make gcc gxx curl pigz -y
+
+micromamba activate clair3_v2
+
+##hiphase
+micromamba activate hiphase
+ 
+#structural variant
+micromamba activate pbsv_env
+ 
+#modepth
+micromamba activate mosdepth_env
+ 
+#nanoplot cmd line
+NanoPlot --fastq MT-1.fastq.gz --outdir nanoplot_qc_MT1 --plots dot --N50 --title MT1_qc_report
+
+#index ref genome
+pbmm2 index MbTMV_clean.fa MbTMV_clean2.mmi --preset SUBREAD
+
+##mapping
+pbmm2 align ./ref_genome/MbTMV_clean.mmi  MT-1.fastq.gz MT1_aln.bam --preset HIFI --sort --rg '@RG\tID:MT1\tSM:MT1\tPL:PACBIO' --unmapped -j 16 &
+
+--preset HIFI — correct for PacBio Revio HiFi data
+--sort — good, produces sorted BAM directly
+--sample MT1 — correct for sample tagging
+-j 16 — fine for thread count
+.mmi index — good, using pre-built index is faster
+
+##index bam
+samtools index MT1_aln.bam
+
+# Once indexing done, verify no corruption
+samtools quickcheck /data2/tomato/CK_aln.bam
+echo $?  # 0 = good, anything else = problem
+
+##get bam stats
+samtools flagstat MT1_aln.bam > MT1_aln.stats
+
+##Count only primary alignments (excludes supplementary & secondary)
+samtools view -c -F 2304 MT1_aln.bam
+
+##count depth of coverage from alignment
+mosdepth --threads 16 --by 500 MT1_mosdepth MT1_aln.bam
+
+##deepvariant
+#to list files in singularity
+singularity exec deepvariant_1.6.1.sif ls /opt/deepvariant/bin/
+
+#index the ref genome 1st
+
+##run deepvariant singularity
+#declare folder to bind, use -B
+
+nohup singularity exec --cleanenv -B /data2:/data2 deepvariant_1.6.1.sif /opt/deepvariant/bin/run_deepvariant --model_type=PACBIO --ref=/data2/tomato/ref_genome/MbTMV_clean.fa --reads=/data2/tomato/MT1_aln.bam --output_vcf=/data2/tomato/MT1.vcf.gz --output_gvcf=/data2/tomato/MT1.g.vcf.gz --num_shards=16
+
+
+
+##run clair3 singularity
+nohup singularity exec --cleanenv -B /data2:/data2 -B /home/biotech/bioinfo_sware:/bioinfo_sware /home/biotech/bioinfo_sware/singularity-ce-4.1.0/clair3_latest.sif /opt/bin/run_clair3.sh --bam_fn=/data2/tomato/MT1_aln.bam --ref_fn=/data2/tomato/ref_genome/MbTMV_clean.fa --threads=10 --platform="hifi" --model_path=/bioinfo_sware/Clair3/models/hifi_revio --output=/data2/tomato/clair3_MT1  --include_all_ctgs --gvcf &
+
+
+##after variant call
+#obtain stats from vcf file
+bcftools stats MT1.vcf.gz | grep "^SN"
+
+#index vcf file
+bcftools index merge_output.vcf.gz
+
+bcftools isec /data2/tomato/deepvar_call/MT1.vcf.gz /data2/tomato/clair3_call/clair3_MT1/merge_output.vcf.gz -p /data2/tomato/isec_MT1 -O z
+
+#calculate stats of concordance file
+bcftools stats 0002.vcf.gz | grep "^SN" > stats.txt
+
+#retrieve number of snps
+bcftools stats 0001.vcf.gz | grep "number of SNPs"
+
+#filter
+bcftools filter -e 'QUAL < 30 || DP < 10' 0002.vcf.gz -O z -o MT1_cc.vcf.gz
+
+##SV caller
+
+
+
+
+
+##mapping using ngmlr
+
+##check bigger files
+du -h / --max-depth=2 2>/dev/null | sort -rh | head -20
+
+nohup singularity exec --cleanenv -B /data2:/data2 /home/biotech/bioinfo_sware/singularity-ce-4.1.0/ngmlr_latest.sif ngmlr -t 10 -r /data2/tomato/ref_genome/MbTMV_clean.fa -q /data2/tomato/MT-1.fastq.gz -x pacbio -o MT1_ngmlr.sam
+
+##trf- prepare tandem repeat file, ensure in BED format
+
+nohup trf ./ref_genome/MbTMV_clean.fa 2 7 7 80 10 50 500 -f -d -m -ngs > MbTMV_clean.trf.dat 2>&1 &
+
+awk '/^@/ {contig=substr($1,2)} 
+     !/^@/ {print contig"\t"$1"\t"$2}' MbTMV_clean.trf.dat > MbTMV_clean.trf.bed
+     
+
+
+
+##
+nohup pbsv discover --tandem-repeats /data2/tomato/trf/MbTMV_clean.trf.bed /data2/tomato/pbmm2_rslt/MT1_aln.bam /data2/tomato/pbsv_rslt/MT1.svsig.gz &
+
+
+
+
+##reference guided-assembly pipeline
+micromamba activate ragtag
+
+##reference guided assembly/chromosome-scale scaffold assembly
+"Flye-assembled contigs of MT1 were scaffolded into 12 chromosome-scale pseudomolecules using S. lycopersicum cv. Moneyberg-TMV as a reference (RagTag), achieving 99.9% of the assembly placed onto pseudochromosomes. The resulting reference-guided assembly comprises 12 pseudomolecules (≥10 Mbp) and 91 unplaced contigs, totaling 811 Mbp.
+
+"The MT1 assembly comprises 811 Mbp across 103 sequences, of which 810.25 Mbp (99.9%) was anchored to 12 chromosome-scale pseudomolecules. BUSCO completeness (solanales_odb10) was XX% complete. The 91 unplaced contigs (1.09 Mbp) represent sequences that could not be confidently positioned relative to the reference."
+
+##clean fast header, leave it only number:
+awk '/^>/ {print $1; next} {print}' chr_heinz.fa
+
+###run scaffold
+nohup ./scaffold.sh &
+
+##get summary of ref guide assembly
+nohup ./scaffold.sh &
+
+##clean pseduochr file
+sed '/^>/ s/_RagTag//' ragtag.scaffold.fasta > mt1_heinz_scaff_clean.fasta
+
+
+
+
