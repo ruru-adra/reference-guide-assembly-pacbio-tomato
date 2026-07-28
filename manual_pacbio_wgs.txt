@@ -129,6 +129,23 @@ bcftools view -H MT1_filtered.vcf.gz | cut -f1-8 > MT1_filtered.txt
 echo -e "CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO" > MT1_filtered.txt
 bcftools view -H MT1_filtered.vcf.gz | cut -f1-8 >> MT1_filtered.txt
 
+samtools view -F 0x900 MT3_aln.bam \
+        | awk '{print $5}' \
+        | sort -n \
+        | uniq -c \
+        | awk '{print $2"\t"$1}' \
+        > MT3_mq.tsv
+        
+bcftools stats MT1.g.vcf.gz > MT1_stats.txt
+grep "number of SNPs:" ${sample}_stats.txt
+
+java -jar ~/bioinfo_sware/gatk-4.6.0.0/gatk-package-4.6.0.0-local.jar SelectVariants \
+-R ../../clean_heinz.fa \
+-V MT3_heinz_cc.vcf.gz \
+--select-type-to-include SNP \
+-O MT3_SNP.vcf
+
+
 **********************************structural variant detection**************************************************
 ###installation
 ##reference guided-assembly pipeline
