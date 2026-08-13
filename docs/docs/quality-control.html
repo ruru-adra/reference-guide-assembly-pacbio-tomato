@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Tomato PacBio HiFi Comparative Genomics Pipeline — Notes</title>
+  <meta name="description" content="Tomato PacBio HiFi Comparative Genomics Pipeline — Notes" />
+  <meta name="generator" content="bookdown 0.47 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Tomato PacBio HiFi Comparative Genomics Pipeline — Notes" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Tomato PacBio HiFi Comparative Genomics Pipeline — Notes" />
+  
+  
+  
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+
+<link rel="next" href="snp-indel-calling.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><strong>Tomato PacBio Pipeline</strong></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#read-qc-nanoplot"><i class="fa fa-check"></i><b>1.1</b> Read QC — NanoPlot</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#index-reference-genome"><i class="fa fa-check"></i><b>1.2</b> Index reference genome</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#primary-alignment-pbmm2"><i class="fa fa-check"></i><b>1.3</b> Primary Alignment — pbmm2</a></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#mapping---pbmm2"><i class="fa fa-check"></i><b>1.4</b> Mapping - pbmm2</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#secondary-alignment-ngmlr-feeds-sniffles2-sv-concordance-track"><i class="fa fa-check"></i><b>1.5</b> Secondary Alignment — ngmlr (feeds Sniffles2 SV concordance track)</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#index-and-sorting-bam-file"><i class="fa fa-check"></i><b>1.6</b> Index and Sorting bam file</a></li>
+<li class="chapter" data-level="1.7" data-path="quality-control.html"><a href="quality-control.html#once-indexing-done-verify-no-corruption"><i class="fa fa-check"></i><b>1.7</b> Once indexing done, verify no corruption</a></li>
+<li class="chapter" data-level="1.8" data-path="quality-control.html"><a href="quality-control.html#coverage-profiling-mosdepth"><i class="fa fa-check"></i><b>1.8</b> Coverage Profiling — mosdepth</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html"><i class="fa fa-check"></i><b>2</b> SNP / InDel Calling</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#caller-1-deepvariant-singularity-batched-per-variety"><i class="fa fa-check"></i><b>2.1</b> Caller 1 — DeepVariant (Singularity, batched per variety)</a></li>
+<li class="chapter" data-level="2.2" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#caller-2-clair3-singularity-batched-per-variety"><i class="fa fa-check"></i><b>2.2</b> Caller 2 — Clair3 (Singularity, batched per variety)</a></li>
+<li class="chapter" data-level="2.3" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#concordance-bcftools-isec"><i class="fa fa-check"></i><b>2.3</b> Concordance — bcftools isec</a></li>
+<li class="chapter" data-level="2.4" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#split-snps-vs.-indels"><i class="fa fa-check"></i><b>2.4</b> Split SNPs vs. InDels</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html"><i class="fa fa-check"></i><b>3</b> Structural Variant Calling</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#primary-track-pbsv-tandem-repeat-aware"><i class="fa fa-check"></i><b>3.1</b> Primary Track — pbsv (tandem-repeat aware)</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#tandem-repeat-annotation-once-per-reference"><i class="fa fa-check"></i><b>3.1.1</b> Tandem repeat annotation (once per reference)</a></li>
+<li class="chapter" data-level="3.1.2" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#sv-signature-discovery-joint-calling"><i class="fa fa-check"></i><b>3.1.2</b> SV signature discovery + joint calling</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#secondary-track-ngmlr-sniffles2-concordance"><i class="fa fa-check"></i><b>3.2</b> Secondary Track — ngmlr + Sniffles2 (concordance)</a></li>
+<li class="chapter" data-level="3.3" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#concordance-between-the-two-tracks"><i class="fa fa-check"></i><b>3.3</b> Concordance Between the Two Tracks</a></li>
+<li class="chapter" data-level="3.4" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#filtering"><i class="fa fa-check"></i><b>3.4</b> Filtering</a></li>
+<li class="chapter" data-level="3.5" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#statistics"><i class="fa fa-check"></i><b>3.5</b> Statistics</a></li>
+<li class="chapter" data-level="3.6" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#notes-on-interpretation"><i class="fa fa-check"></i><b>3.6</b> Notes on Interpretation</a></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Tomato PacBio HiFi Comparative Genomics Pipeline — Notes</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="header">
+<h1 class="title">Tomato PacBio HiFi Comparative Genomics Pipeline — Notes</h1>
+</div>
+<div id="quality-control" class="section level1 hasAnchor" number="1">
+<h1><span class="header-section-number">1</span> Quality Control<a href="quality-control.html#quality-control" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="read-qc-nanoplot" class="section level2 hasAnchor" number="1.1">
+<h2><span class="header-section-number">1.1</span> Read QC — NanoPlot<a href="quality-control.html#read-qc-nanoplot" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Run per variety on raw HiFi FASTQ/BAM input.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="quality-control.html#cb1-1" tabindex="-1"></a><span class="ex">NanoPlot</span> <span class="at">--fastq</span> CKH.fastq.gz <span class="at">--outdir</span> CKH_nanoplot <span class="at">--plots</span> dot <span class="at">--N50</span> <span class="at">-t</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="quality-control.html#cb1-2" tabindex="-1"></a><span class="ex">NanoPlot</span> <span class="at">--bam</span> MT1_reads.bam <span class="at">--outdir</span> MT1_nanoplot <span class="at">-t</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span></span>
+<span id="cb1-3"><a href="quality-control.html#cb1-3" tabindex="-1"></a><span class="ex">NanoPlot</span> <span class="at">--bam</span> MT3_reads.bam <span class="at">--outdir</span> MT3_nanoplot <span class="at">-t</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span></span></code></pre></div>
+<p><strong>What to check:</strong> total yield, read count, mean/median quality (Q-score),
+percentage of reads above Q20. HiFi data should show &gt;99% reads above Q20 given
+the circular consensus sequencing (CCS) accuracy floor.</p>
+</div>
+<div id="index-reference-genome" class="section level2 hasAnchor" number="1.2">
+<h2><span class="header-section-number">1.2</span> Index reference genome<a href="quality-control.html#index-reference-genome" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The Heinz SL4.0 GFF3 includes <code>ch00</code>, an unplaced-scaffold bin (not one of the
+12 real tomato chromosomes) and must be excluded from all analyses.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="quality-control.html#cb2-1" tabindex="-1"></a><span class="co"># Trim FASTA to ch01–ch12 only</span></span>
+<span id="cb2-2"><a href="quality-control.html#cb2-2" tabindex="-1"></a><span class="ex">samtools</span> faidx Heinz_SL4.0.fasta</span>
+<span id="cb2-3"><a href="quality-control.html#cb2-3" tabindex="-1"></a><span class="ex">samtools</span> faidx Heinz_SL4.0.fasta <span class="dt">\</span></span>
+<span id="cb2-4"><a href="quality-control.html#cb2-4" tabindex="-1"></a>  SL4.0ch01 SL4.0ch02 SL4.0ch03 SL4.0ch04 SL4.0ch05 SL4.0ch06 <span class="dt">\</span></span>
+<span id="cb2-5"><a href="quality-control.html#cb2-5" tabindex="-1"></a>  SL4.0ch07 SL4.0ch08 SL4.0ch09 SL4.0ch10 SL4.0ch11 SL4.0ch12 <span class="dt">\</span></span>
+<span id="cb2-6"><a href="quality-control.html#cb2-6" tabindex="-1"></a>  <span class="op">&gt;</span> Heinz_SL4.0_genome_ch1-12.fasta</span>
+<span id="cb2-7"><a href="quality-control.html#cb2-7" tabindex="-1"></a>  </span>
+<span id="cb2-8"><a href="quality-control.html#cb2-8" tabindex="-1"></a><span class="ex">samtools</span> faidx Heinz_SL4.0_genome_ch1-12.fasta</span>
+<span id="cb2-9"><a href="quality-control.html#cb2-9" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="quality-control.html#cb2-10" tabindex="-1"></a><span class="ex">java</span> <span class="at">-jar</span> ~/bioinfo_sware/gatk-4.6.0.0/gatk-package-4.6.0.0-local.jar LocalSequenceDictionary <span class="dt">\</span></span>
+<span id="cb2-11"><a href="quality-control.html#cb2-11" tabindex="-1"></a>clean_heinz.fasta <span class="at">-O</span> clean_heinz.dict</span>
+<span id="cb2-12"><a href="quality-control.html#cb2-12" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="quality-control.html#cb2-13" tabindex="-1"></a><span class="co"># Trim GFF3 to the same 12 chromosomes (whitelist, not blacklist)</span></span>
+<span id="cb2-14"><a href="quality-control.html#cb2-14" tabindex="-1"></a><span class="fu">awk</span> <span class="st">&#39;$1 ~ /^SL4\.0ch(0[1-9]|1[0-2])$/&#39;</span> Heinz_SL4.0.gff3 <span class="op">&gt;</span> Heinz_SL4.0_ch1-12.gff3</span></code></pre></div>
+</div>
+<div id="primary-alignment-pbmm2" class="section level2 hasAnchor" number="1.3">
+<h2><span class="header-section-number">1.3</span> Primary Alignment — pbmm2<a href="quality-control.html#primary-alignment-pbmm2" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="quality-control.html#cb3-1" tabindex="-1"></a><span class="ex">pbmm2</span> index clean_heinz.fasta clean_heinz.mmi <span class="at">--preset</span> SUBREAD</span></code></pre></div>
+</div>
+<div id="mapping---pbmm2" class="section level2 hasAnchor" number="1.4">
+<h2><span class="header-section-number">1.4</span> Mapping - pbmm2<a href="quality-control.html#mapping---pbmm2" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="quality-control.html#cb4-1" tabindex="-1"></a><span class="ex">pbmm2</span> align ./ref_genome/clean_heinz.mmi MT1.fastq.gz MT1_aln.bam <span class="at">--preset</span> HIFI <span class="at">--sort</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="quality-control.html#cb4-2" tabindex="-1"></a>--rg <span class="st">&#39;@RG\tID:MT1\tSM:MT1\tPL:PACBIO&#39;</span> <span class="at">--unmapped</span> <span class="at">-j</span> 16 <span class="kw">&amp;</span></span></code></pre></div>
+<p>–preset = HIFI — correct for PacBio Revio HiFi data
+–sort = good, produces sorted BAM directly
+–sample = MT1 — correct for sample tagging
+-j 16 = fine for thread count
+.mmi = index — good, using pre-built index is faster</p>
+</div>
+<div id="secondary-alignment-ngmlr-feeds-sniffles2-sv-concordance-track" class="section level2 hasAnchor" number="1.5">
+<h2><span class="header-section-number">1.5</span> Secondary Alignment — ngmlr (feeds Sniffles2 SV concordance track)<a href="quality-control.html#secondary-alignment-ngmlr-feeds-sniffles2-sv-concordance-track" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>ngmlr has no dedicated HiFi/CCS preset; the CLR preset (<code>-x pacbio</code>) is used as
+the closest available option.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="quality-control.html#cb5-1" tabindex="-1"></a><span class="ex">ngmlr</span> <span class="at">-t</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="quality-control.html#cb5-2" tabindex="-1"></a>  <span class="at">-r</span> clean_heinz.fasta <span class="dt">\</span></span>
+<span id="cb5-3"><a href="quality-control.html#cb5-3" tabindex="-1"></a>  <span class="at">-q</span> MT1.fastq.gz <span class="dt">\</span></span>
+<span id="cb5-4"><a href="quality-control.html#cb5-4" tabindex="-1"></a>  <span class="at">-x</span> pacbio <span class="dt">\</span></span>
+<span id="cb5-5"><a href="quality-control.html#cb5-5" tabindex="-1"></a>  <span class="at">-o</span> sample.sam</span></code></pre></div>
+</div>
+<div id="index-and-sorting-bam-file" class="section level2 hasAnchor" number="1.6">
+<h2><span class="header-section-number">1.6</span> Index and Sorting bam file<a href="quality-control.html#index-and-sorting-bam-file" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="quality-control.html#cb6-1" tabindex="-1"></a><span class="ex">samtools</span> sort <span class="at">-@</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span> -o MT1.aln.sorted.bam MT1.sam</span>
+<span id="cb6-2"><a href="quality-control.html#cb6-2" tabindex="-1"></a><span class="ex">samtools</span> index MT1.aln.sorted.bam</span></code></pre></div>
+</div>
+<div id="once-indexing-done-verify-no-corruption" class="section level2 hasAnchor" number="1.7">
+<h2><span class="header-section-number">1.7</span> Once indexing done, verify no corruption<a href="quality-control.html#once-indexing-done-verify-no-corruption" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="quality-control.html#cb7-1" tabindex="-1"></a><span class="ex">samtools</span> quickcheck /data2/tomato/MT1.aln.sorted.bam</span>
+<span id="cb7-2"><a href="quality-control.html#cb7-2" tabindex="-1"></a><span class="bu">echo</span> <span class="va">$?</span>  <span class="co"># 0 = good, anything else = problem</span></span></code></pre></div>
+</div>
+<div id="coverage-profiling-mosdepth" class="section level2 hasAnchor" number="1.8">
+<h2><span class="header-section-number">1.8</span> Coverage Profiling — mosdepth<a href="quality-control.html#coverage-profiling-mosdepth" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Run after alignment to check per-chromosome depth before setting DP filters
+for variant calling.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="quality-control.html#cb8-1" tabindex="-1"></a><span class="ex">mosdepth</span> <span class="at">--threads</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span> CKH_heinz CKH.heinz.pbmm2.bam</span>
+<span id="cb8-2"><a href="quality-control.html#cb8-2" tabindex="-1"></a><span class="ex">mosdepth</span> <span class="at">--threads</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span> MT1_heinz MT1.heinz.pbmm2.bam</span>
+<span id="cb8-3"><a href="quality-control.html#cb8-3" tabindex="-1"></a><span class="ex">mosdepth</span> <span class="at">--threads</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span> MT3_heinz MT3.heinz.pbmm2.bam</span></code></pre></div>
+<p>Pull mean depth from <code>&lt;prefix&gt;.mosdepth.summary.txt</code>. A practical DP ceiling for
+variant filtering is roughly <strong>2.5× the genome-wide mean depth</strong> per sample —
+extreme per-base depth outliers (e.g., observed on chr2/chr10 against MbTMV)
+typically reflect repeat-collapsed reference assembly artifacts rather than
+genuine sequencing problems, and should be capped rather than trusted as-is.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+
+<a href="snp-indel-calling.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": false,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": null,
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "section",
+    "scroll_highlight": true
+  }
+});
+});
+</script>
+
+</body>
+
+</html>
