@@ -1,0 +1,17 @@
+bookdown::gitbook:
+  css: style.css
+  config:
+    toc:
+      collapse: section
+      scroll_highlight: yes
+      before: |
+        <li><strong>Tomato PacBio Pipeline</strong></li>
+      after: |
+        <li><a href="https://mardi.gov.my" target="_blank">MARDI</a></li>
+    edit: null
+    download: null
+    sharing:
+      facebook: no
+      twitter: no
+    search:
+      engine: fuse

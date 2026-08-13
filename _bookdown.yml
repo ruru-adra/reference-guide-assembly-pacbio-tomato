@@ -1,0 +1,6 @@
+book_filename: "tomato_pipeline_notes"
+output_dir: "docs"
+delete_merged_file: true
+rmd_files: [
+  "sv_var.Rmd"
+]

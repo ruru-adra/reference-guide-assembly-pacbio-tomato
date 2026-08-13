@@ -1,0 +1,23 @@
+/* Minimal accent styling on top of the default gitbook theme */
+
+.book .book-summary {
+  background: #f7f7f7;
+}
+
+.book .book-summary ul.summary li.active > a {
+  color: #2E5339;
+  font-weight: 600;
+}
+
+h1, h2, h3 {
+  color: #2E5339;
+}
+
+pre code {
+  font-size: 0.85em;
+}
+
+/* Shell/bash code chunks get a slightly distinct background from R chunks */
+.sourceCode.bash {
+  background-color: #f2f2f2;
+}

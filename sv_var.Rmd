@@ -1,0 +1,394 @@
+---
+title: "Tomato PacBio HiFi Comparative Genomics Pipeline — Notes"
+author: "Dr. Rabiatul Adawiah binti Zainal Abidin"
+site: bookdown::bookdown_site
+output: bookdown::gitbook
+documentclass: book
+---
+
+# Quality Control
+
+## Read QC — NanoPlot
+
+Run per variety on raw HiFi FASTQ/BAM input.
+
+```{bash, eval=FALSE}
+NanoPlot --fastq CKH.fastq.gz --outdir CKH_nanoplot --plots dot --N50 -t <threads>
+NanoPlot --bam MT1_reads.bam --outdir MT1_nanoplot -t <threads>
+NanoPlot --bam MT3_reads.bam --outdir MT3_nanoplot -t <threads>
+```
+
+**What to check:** total yield, read count, mean/median quality (Q-score),
+percentage of reads above Q20. HiFi data should show >99% reads above Q20 given
+the circular consensus sequencing (CCS) accuracy floor.
+
+## Index reference genome
+
+The Heinz SL4.0 GFF3 includes `ch00`, an unplaced-scaffold bin (not one of the
+12 real tomato chromosomes) and must be excluded from all analyses.
+
+```{bash, eval=FALSE}
+# Trim FASTA to ch01–ch12 only
+samtools faidx Heinz_SL4.0.fasta
+samtools faidx Heinz_SL4.0.fasta \
+  SL4.0ch01 SL4.0ch02 SL4.0ch03 SL4.0ch04 SL4.0ch05 SL4.0ch06 \
+  SL4.0ch07 SL4.0ch08 SL4.0ch09 SL4.0ch10 SL4.0ch11 SL4.0ch12 \
+  > Heinz_SL4.0_genome_ch1-12.fasta
+  
+samtools faidx Heinz_SL4.0_genome_ch1-12.fasta
+
+java -jar ~/bioinfo_sware/gatk-4.6.0.0/gatk-package-4.6.0.0-local.jar LocalSequenceDictionary \
+clean_heinz.fasta -O clean_heinz.dict
+
+# Trim GFF3 to the same 12 chromosomes (whitelist, not blacklist)
+awk '$1 ~ /^SL4\.0ch(0[1-9]|1[0-2])$/' Heinz_SL4.0.gff3 > Heinz_SL4.0_ch1-12.gff3
+```
+
+## Primary Alignment — pbmm2
+
+```{bash, eval=FALSE}
+pbmm2 index clean_heinz.fasta clean_heinz.mmi --preset SUBREAD
+```
+
+## Mapping - pbmm2
+
+```{bash, eval=FALSE}
+pbmm2 align ./ref_genome/clean_heinz.mmi MT1.fastq.gz MT1_aln.bam --preset HIFI --sort \
+--rg '@RG\tID:MT1\tSM:MT1\tPL:PACBIO' --unmapped -j 16 &
+```
+--preset = HIFI — correct for PacBio Revio HiFi data
+--sort = good, produces sorted BAM directly
+--sample = MT1 — correct for sample tagging
+-j 16 = fine for thread count
+.mmi = index — good, using pre-built index is faster
+
+## Secondary Alignment — ngmlr (feeds Sniffles2 SV concordance track)
+
+ngmlr has no dedicated HiFi/CCS preset; the CLR preset (`-x pacbio`) is used as
+the closest available option.
+
+```{bash, eval=FALSE}
+ngmlr -t <threads> \
+  -r clean_heinz.fasta \
+  -q MT1.fastq.gz \
+  -x pacbio \
+  -o sample.sam
+```
+
+## Index and Sorting bam file
+
+```{bash, eval=FALSE}
+samtools sort -@ <threads> -o MT1.aln.sorted.bam MT1.sam
+samtools index MT1.aln.sorted.bam
+```
+
+## Once indexing done, verify no corruption
+```{bash, eval=FALSE}
+samtools quickcheck /data2/tomato/MT1.aln.sorted.bam
+echo $?  # 0 = good, anything else = problem
+```
+
+## Coverage Profiling — mosdepth
+
+Run after alignment to check per-chromosome depth before setting DP filters
+for variant calling.
+
+```{bash, eval=FALSE}
+mosdepth --threads <threads> CKH_heinz CKH.heinz.pbmm2.bam
+mosdepth --threads <threads> MT1_heinz MT1.heinz.pbmm2.bam
+mosdepth --threads <threads> MT3_heinz MT3.heinz.pbmm2.bam
+```
+
+Pull mean depth from `<prefix>.mosdepth.summary.txt`. A practical DP ceiling for
+variant filtering is roughly **2.5× the genome-wide mean depth** per sample —
+extreme per-base depth outliers (e.g., observed on chr2/chr10 against MbTMV)
+typically reflect repeat-collapsed reference assembly artifacts rather than
+genuine sequencing problems, and should be capped rather than trusted as-is.
+
+# SNP / InDel Calling
+
+Dual-caller concordance strategy: **DeepVariant** + **Clair3**, intersected via
+`bcftools isec`. The concordant call set (`0002.vcf`) is authoritative for all
+downstream analysis. This is run against both MbTMV and Heinz SL4.0 alignments.
+
+## Caller 1 — DeepVariant (Singularity, batched per variety)
+
+```{bash, eval=FALSE}
+#single command
+nohup singularity exec --cleanenv -B /data2:/data2 deepvariant_1.6.1.sif \ /opt/deepvariant/bin/run_deepvariant \
+--model_type=PACBIO \
+--ref=/data2/tomato/ref_genome/MbTMV_clean.fa \
+--reads=/data2/tomato/MT1_aln.bam \
+--output_vcf=/data2/tomato/MT1.vcf.gz \
+--output_gvcf=/data2/tomato/MT1.g.vcf.gz \
+--num_shards=16
+
+##batch command
+#!/bin/bash
+set -euo pipefail
+
+BASE_DIR="/data2/tomato/ref_genome/heinz"
+SIF="/home/biotech/bioinfo_sware/singularity-ce-4.1.0/deepvariant_1.6.1.sif"
+REF="${BASE_DIR}/clean_heinz.fasta"
+NUM_SHARDS=16
+VARIETIES=("CKH" "MT1" "MT3")
+
+for VARIETY in "${VARIETIES[@]}"; do
+  singularity exec --cleanenv -B /data2:/data2 "${SIF}" \
+    /opt/deepvariant/bin/run_deepvariant \
+    --model_type=PACBIO \
+    --ref="${REF}" \
+    --reads="${BASE_DIR}/${VARIETY}_aln_heinz.bam" \
+    --output_vcf="${BASE_DIR}/${VARIETY}_heinz.vcf.gz" \
+    --output_gvcf="${BASE_DIR}/${VARIETY}_heinz.g.vcf.gz" \
+    --num_shards="${NUM_SHARDS}" \
+    > "${BASE_DIR}/${VARIETY}_deepvariant.log" 2>&1
+done
+```
+
+`--model_type=PACBIO` selects the HiFi/CCS-tuned model. `.g.vcf.gz` (gVCF) is
+**not** used in this per-sample concordance pipeline — it is only relevant for
+joint multi-sample genotyping (e.g., via GLnexus), which this pipeline does not
+currently perform.
+
+## Caller 2 — Clair3 (Singularity, batched per variety)
+
+```{bash, eval=FALSE}
+
+##single command
+nohup singularity exec --cleanenv -B /data2:/data2 \
+-B /home/biotech/bioinfo_sware:/bioinfo_sware \ /home/biotech/bioinfo_sware/singularity-ce-4.1.0/clair3_latest.sif \
+/opt/bin/run_clair3.sh \
+--bam_fn=/data2/tomato/MT1_aln.bam \
+--ref_fn=/data2/tomato/ref_genome/MbTMV_clean.fa \
+--threads=10 \
+--platform="hifi" \
+--model_path=/bioinfo_sware/Clair3/models/hifi_revio \
+--output=/data2/tomato/clair3_MT1 \
+--include_all_ctgs \
+--gvcf &
+
+##batch command
+#!/bin/bash
+set -euo pipefail
+
+BASE_DIR="/data2/tomato/ref_genome/heinz"
+TMP_DIR="/data2/tomato/tmp"
+SIF="/home/biotech/bioinfo_sware/singularity-ce-4.1.0/clair3_latest.sif"
+MODEL_PATH="/bioinfo_sware/Clair3/models/hifi_revio"
+REF="${BASE_DIR}/clean_heinz.fasta"
+THREADS=10
+VARIETIES=("CKH" "MT1" "MT3")
+
+for VARIETY in "${VARIETIES[@]}"; do
+  OUTDIR="${BASE_DIR}/clair3_${VARIETY}"
+  mkdir -p "${OUTDIR}"
+  singularity exec --cleanenv \
+    -B /data2:/data2 \
+    -B /home/biotech/bioinfo_sware:/bioinfo_sware \
+    -B "${TMP_DIR}:/tmp" \
+    --env TMPDIR=/tmp \
+    "${SIF}" \
+    /opt/bin/run_clair3.sh \
+    --bam_fn="${BASE_DIR}/${VARIETY}_aln_heinz.bam" \
+    --ref_fn="${REF}" \
+    --threads="${THREADS}" \
+    --platform="hifi" \
+    --model_path="${MODEL_PATH}" \
+    --output="${OUTDIR}" \
+    --include_all_ctgs \
+    --gvcf \
+    > "${BASE_DIR}/${VARIETY}_clair3.log" 2>&1
+done
+```
+
+## Concordance — bcftools isec
+
+```{bash, eval=FALSE}
+bcftools isec -p CKH_isec_heinz \
+  CKH_heinz.vcf.gz \
+  clair3_CKH/merge_output.vcf.gz
+```
+
+| Output file | Contents |
+|---|---|
+| `0000.vcf` | DeepVariant-only calls |
+| `0001.vcf` | Clair3-only calls |
+| **`0002.vcf`** | **Concordant — DeepVariant's representation. Authoritative for downstream analysis.** |
+| `0003.vcf` | Concordant — Clair3's representation (same positions as 0002, redundant for most purposes) |
+
+## Split SNPs vs. InDels
+
+```{bash, eval=FALSE}
+java -jar ~/bioinfo_sware/gatk-4.6.0.0/gatk-package-4.6.0.0-local.jar SelectVariants \
+-R ../../clean_heinz.fasta \
+-V MT3_heinz_cc.vcf.gz \
+--select-type-to-include SNP \
+-O MT3_SNP.vcf
+
+java -jar ~/bioinfo_sware/gatk-4.6.0.0/gatk-package-4.6.0.0-local.jar SelectVariants \
+-R ../../clean_heinz.fasta \
+-V MT3_heinz_cc.vcf.gz \
+--select-type-to-include INDEL \
+-O MT3_INDEL.vcf
+
+##convert vcf to txt
+java -jar ~/bioinfo_sware/gatk-4.6.0.0/gatk-package-4.6.0.0-local.jar VariantsToTable \
+  -V MT1_filtered.vcf.gz \
+  -F CHROM \
+  -F POS \
+  -F REF \
+  -F ALT \
+  -F QUAL \
+  -F FILTER \
+  -F TYPE \
+  -F DP \
+  -GF GT \
+  -GF GQ \
+  -GF DP \
+  -O MT1_variants_table.txt
+
+```
+
+# Structural Variant Calling
+
+Dual-track SV strategy: **pbmm2 + pbsv** as primary (HiFi-native, tandem-repeat
+aware), **ngmlr + Sniffles2** as a secondary concordance track.
+
+## Primary Track — pbsv (tandem-repeat aware)
+
+### Tandem repeat annotation (once per reference)
+
+Tandem repeats are a property of the reference sequence, not of any individual
+sample — generate once per reference and reuse across all varieties.
+
+```{bash, eval=FALSE}
+trf clean_heinz.fasta 2 7 7 80 10 50 500 -d -h
+```
+
+Convert TRF `.dat` output to BED (needed because `pbsv --tandem-repeats`
+requires BED format; TRF coordinates are 1-based inclusive and must shift to
+0-based half-open):
+
+```{bash, eval=FALSE}
+awk '
+/^Sequence:/ { seq = $2; next }
+/^[0-9]+ [0-9]+/ { print seq"\t"($1-1)"\t"$2 }
+' clean_heinz.fasta.2.7.7.80.10.50.500.dat > clean_heinz_tandem_repeats.bed
+```
+
+### SV signature discovery + joint calling
+
+```{bash, eval=FALSE}
+##single command
+pbsv discover \
+  --tandem-repeats MbTMV_tandem_repeats.bed \
+  sample.pbmm2.bam \
+  sample.svsig.gz
+  
+##batch command
+VARIETIES=("CKH" "MT1" "MT3")
+
+for VARIETY in "${VARIETIES[@]}"; do
+  pbsv discover \
+    --tandem-repeats Heinz_ch1-12_tandem_repeats.bed \
+    ${VARIETY}.heinz.pbmm2.bam \
+    ${VARIETY}.svsig.gz
+done
+
+pbsv call \
+  --num-threads <threads> \
+  clean_heinz.fasta \
+  CKH.svsig.gz MT1.svsig.gz MT3.svsig.gz \
+  merged.pbsv.heinz.vcf
+```
+
+## Secondary Track — ngmlr + Sniffles2 (concordance)
+
+See the Secondary Alignment — ngmlr section above for the ngmlr alignment step
+and the legacy-samtools sort fix required for its SAM output.
+
+```{bash, eval=FALSE}
+##single cmd
+sniffles --input CKH.sorted.bam --snf CKH.snf \
+  --reference clean_heinz.fasta --threads <threads>
+
+##batch cmd
+VARIETIES=("CKH" "MT1" "MT3")
+
+for VARIETY in "${VARIETIES[@]}"; do
+  sniffles --input ${VARIETY}.sorted.bam --snf ${VARIETY}.snf \
+    --reference clean_heinz.fasta --threads <threads>
+done
+
+```
+
+## Concordance Between the Two Tracks
+
+SVs rarely land on identical coordinates across callers (unlike SNPs), so
+intersection uses a breakpoint-distance window rather than exact position
+matching:
+
+```{bash, eval=FALSE}
+SURVIVOR merge vcf_list.txt 1000 2 1 1 0 30 merged_survivor.heinz.vcf
+```
+
+## Filtering
+
+- `SUPPORT >= 3–5` supporting reads
+- `SVLEN >= 50 bp` (separates from indels already captured by DeepVariant/Clair3)
+- Consider tiering `PRECISE` vs. `IMPRECISE` calls separately
+
+## Statistics
+```{bash, eval=FALSE}
+##get bam stats
+samtools flagstat MT1_aln.bam > MT1_aln.stats
+
+##Count only primary alignments (excludes supplementary & secondary)
+samtools view -c -F 2304 MT1_aln.bam
+
+#to list files in singularity
+singularity exec deepvariant_1.6.1.sif ls /opt/deepvariant/bin/
+
+##obtain stats from vcf file
+bcftools stats MT1.vcf.gz | grep "^SN"
+
+##calculate stats of concordance file
+bcftools stats 0002.vcf.gz | grep "^SN" > stats.txt
+
+##retrieve number of snps
+bcftools stats 0001.vcf.gz | grep "number of SNPs"
+
+##filter
+bcftools filter -e 'QUAL < 30 || DP < 10' 0002.vcf.gz -O z -o MT1_cc.vcf.gz
+
+##for viewing
+# Count total variants
+bcftools view -H MT1_filtered.vcf.gz | wc -l
+
+# View only SNPs
+bcftools view -v snps MT1_filtered.vcf.gz | less
+
+# View only indels
+bcftools view -v indels MT1_filtered.vcf.gz | less
+
+# Quick stats summary
+bcftools stats MT1_filtered.vcf.gz | grep "^SN"
+
+```
+
+
+## Notes on Interpretation
+
+- **GT is authoritative over ALT** for allele determination in single-sample
+  VCFs — phantom ALT alleles can arise from repeat-collapsed reference
+  assembly artifacts.
+- **NA in a joined sample column means "matches reference,"** not missing data.
+- A high multiallelic site count in what should be a single-sample VCF likely
+  indicates the file is actually a merged multi-sample VCF.
+- HiFi's ~99.9% raw accuracy is mostly a *substitution*-error improvement;
+  residual error remains disproportionately indel-based, especially in
+  homopolymer runs. True biological coding-region indels cluster at multiples
+  of 3 bp (frame-preserving); artifact indels cluster at 1–2 bp in homopolymer
+  contexts — a useful QC check with no direct SNP-Ts/Tv equivalent.
+

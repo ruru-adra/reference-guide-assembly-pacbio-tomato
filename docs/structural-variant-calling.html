@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>3 Structural Variant Calling | Tomato PacBio HiFi Comparative Genomics Pipeline — Notes</title>
+  <meta name="description" content="3 Structural Variant Calling | Tomato PacBio HiFi Comparative Genomics Pipeline — Notes" />
+  <meta name="generator" content="bookdown 0.47 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="3 Structural Variant Calling | Tomato PacBio HiFi Comparative Genomics Pipeline — Notes" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="3 Structural Variant Calling | Tomato PacBio HiFi Comparative Genomics Pipeline — Notes" />
+  
+  
+  
+
+<meta name="author" content="Dr. Rabiatul Adawiah binti Zainal Abidin" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="snp-indel-calling.html"/>
+
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><strong>Tomato PacBio Pipeline</strong></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#read-qc-nanoplot"><i class="fa fa-check"></i><b>1.1</b> Read QC — NanoPlot</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#index-reference-genome"><i class="fa fa-check"></i><b>1.2</b> Index reference genome</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#primary-alignment-pbmm2"><i class="fa fa-check"></i><b>1.3</b> Primary Alignment — pbmm2</a></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#mapping---pbmm2"><i class="fa fa-check"></i><b>1.4</b> Mapping - pbmm2</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#secondary-alignment-ngmlr-feeds-sniffles2-sv-concordance-track"><i class="fa fa-check"></i><b>1.5</b> Secondary Alignment — ngmlr (feeds Sniffles2 SV concordance track)</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#index-and-sorting-bam-file"><i class="fa fa-check"></i><b>1.6</b> Index and Sorting bam file</a></li>
+<li class="chapter" data-level="1.7" data-path="quality-control.html"><a href="quality-control.html#once-indexing-done-verify-no-corruption"><i class="fa fa-check"></i><b>1.7</b> Once indexing done, verify no corruption</a></li>
+<li class="chapter" data-level="1.8" data-path="quality-control.html"><a href="quality-control.html#coverage-profiling-mosdepth"><i class="fa fa-check"></i><b>1.8</b> Coverage Profiling — mosdepth</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html"><i class="fa fa-check"></i><b>2</b> SNP / InDel Calling</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#caller-1-deepvariant-singularity-batched-per-variety"><i class="fa fa-check"></i><b>2.1</b> Caller 1 — DeepVariant (Singularity, batched per variety)</a></li>
+<li class="chapter" data-level="2.2" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#caller-2-clair3-singularity-batched-per-variety"><i class="fa fa-check"></i><b>2.2</b> Caller 2 — Clair3 (Singularity, batched per variety)</a></li>
+<li class="chapter" data-level="2.3" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#concordance-bcftools-isec"><i class="fa fa-check"></i><b>2.3</b> Concordance — bcftools isec</a></li>
+<li class="chapter" data-level="2.4" data-path="snp-indel-calling.html"><a href="snp-indel-calling.html#split-snps-vs.-indels"><i class="fa fa-check"></i><b>2.4</b> Split SNPs vs. InDels</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html"><i class="fa fa-check"></i><b>3</b> Structural Variant Calling</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#primary-track-pbsv-tandem-repeat-aware"><i class="fa fa-check"></i><b>3.1</b> Primary Track — pbsv (tandem-repeat aware)</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#tandem-repeat-annotation-once-per-reference"><i class="fa fa-check"></i><b>3.1.1</b> Tandem repeat annotation (once per reference)</a></li>
+<li class="chapter" data-level="3.1.2" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#sv-signature-discovery-joint-calling"><i class="fa fa-check"></i><b>3.1.2</b> SV signature discovery + joint calling</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#secondary-track-ngmlr-sniffles2-concordance"><i class="fa fa-check"></i><b>3.2</b> Secondary Track — ngmlr + Sniffles2 (concordance)</a></li>
+<li class="chapter" data-level="3.3" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#concordance-between-the-two-tracks"><i class="fa fa-check"></i><b>3.3</b> Concordance Between the Two Tracks</a></li>
+<li class="chapter" data-level="3.4" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#filtering"><i class="fa fa-check"></i><b>3.4</b> Filtering</a></li>
+<li class="chapter" data-level="3.5" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#statistics"><i class="fa fa-check"></i><b>3.5</b> Statistics</a></li>
+<li class="chapter" data-level="3.6" data-path="structural-variant-calling.html"><a href="structural-variant-calling.html#notes-on-interpretation"><i class="fa fa-check"></i><b>3.6</b> Notes on Interpretation</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://mardi.gov.my" target="_blank">MARDI</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Tomato PacBio HiFi Comparative Genomics Pipeline — Notes</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="structural-variant-calling" class="section level1 hasAnchor" number="3">
+<h1><span class="header-section-number">3</span> Structural Variant Calling<a href="structural-variant-calling.html#structural-variant-calling" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>Dual-track SV strategy: <strong>pbmm2 + pbsv</strong> as primary (HiFi-native, tandem-repeat
+aware), <strong>ngmlr + Sniffles2</strong> as a secondary concordance track.</p>
+<div id="primary-track-pbsv-tandem-repeat-aware" class="section level2 hasAnchor" number="3.1">
+<h2><span class="header-section-number">3.1</span> Primary Track — pbsv (tandem-repeat aware)<a href="structural-variant-calling.html#primary-track-pbsv-tandem-repeat-aware" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="tandem-repeat-annotation-once-per-reference" class="section level3 hasAnchor" number="3.1.1">
+<h3><span class="header-section-number">3.1.1</span> Tandem repeat annotation (once per reference)<a href="structural-variant-calling.html#tandem-repeat-annotation-once-per-reference" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Tandem repeats are a property of the reference sequence, not of any individual
+sample — generate once per reference and reuse across all varieties.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="structural-variant-calling.html#cb13-1" tabindex="-1"></a><span class="ex">trf</span> clean_heinz.fasta 2 7 7 80 10 50 500 <span class="at">-d</span> <span class="at">-h</span></span></code></pre></div>
+<p>Convert TRF <code>.dat</code> output to BED (needed because <code>pbsv --tandem-repeats</code>
+requires BED format; TRF coordinates are 1-based inclusive and must shift to
+0-based half-open):</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="structural-variant-calling.html#cb14-1" tabindex="-1"></a><span class="fu">awk</span> <span class="st">&#39;</span></span>
+<span id="cb14-2"><a href="structural-variant-calling.html#cb14-2" tabindex="-1"></a><span class="st">/^Sequence:/ { seq = $2; next }</span></span>
+<span id="cb14-3"><a href="structural-variant-calling.html#cb14-3" tabindex="-1"></a><span class="st">/^[0-9]+ [0-9]+/ { print seq&quot;\t&quot;($1-1)&quot;\t&quot;$2 }</span></span>
+<span id="cb14-4"><a href="structural-variant-calling.html#cb14-4" tabindex="-1"></a><span class="st">&#39;</span> clean_heinz.fasta.2.7.7.80.10.50.500.dat <span class="op">&gt;</span> clean_heinz_tandem_repeats.bed</span></code></pre></div>
+</div>
+<div id="sv-signature-discovery-joint-calling" class="section level3 hasAnchor" number="3.1.2">
+<h3><span class="header-section-number">3.1.2</span> SV signature discovery + joint calling<a href="structural-variant-calling.html#sv-signature-discovery-joint-calling" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="structural-variant-calling.html#cb15-1" tabindex="-1"></a><span class="co">##single command</span></span>
+<span id="cb15-2"><a href="structural-variant-calling.html#cb15-2" tabindex="-1"></a><span class="ex">pbsv</span> discover <span class="dt">\</span></span>
+<span id="cb15-3"><a href="structural-variant-calling.html#cb15-3" tabindex="-1"></a>  <span class="at">--tandem-repeats</span> MbTMV_tandem_repeats.bed <span class="dt">\</span></span>
+<span id="cb15-4"><a href="structural-variant-calling.html#cb15-4" tabindex="-1"></a>  sample.pbmm2.bam <span class="dt">\</span></span>
+<span id="cb15-5"><a href="structural-variant-calling.html#cb15-5" tabindex="-1"></a>  sample.svsig.gz</span>
+<span id="cb15-6"><a href="structural-variant-calling.html#cb15-6" tabindex="-1"></a>  </span>
+<span id="cb15-7"><a href="structural-variant-calling.html#cb15-7" tabindex="-1"></a><span class="co">##batch command</span></span>
+<span id="cb15-8"><a href="structural-variant-calling.html#cb15-8" tabindex="-1"></a><span class="va">VARIETIES</span><span class="op">=</span><span class="va">(</span><span class="st">&quot;CKH&quot;</span> <span class="st">&quot;MT1&quot;</span> <span class="st">&quot;MT3&quot;</span><span class="va">)</span></span>
+<span id="cb15-9"><a href="structural-variant-calling.html#cb15-9" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="structural-variant-calling.html#cb15-10" tabindex="-1"></a><span class="cf">for</span> VARIETY <span class="kw">in</span> <span class="st">&quot;</span><span class="va">${VARIETIES</span><span class="op">[@]</span><span class="va">}</span><span class="st">&quot;</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb15-11"><a href="structural-variant-calling.html#cb15-11" tabindex="-1"></a>  <span class="ex">pbsv</span> discover <span class="dt">\</span></span>
+<span id="cb15-12"><a href="structural-variant-calling.html#cb15-12" tabindex="-1"></a>    <span class="at">--tandem-repeats</span> Heinz_ch1-12_tandem_repeats.bed <span class="dt">\</span></span>
+<span id="cb15-13"><a href="structural-variant-calling.html#cb15-13" tabindex="-1"></a>    <span class="va">${VARIETY}</span>.heinz.pbmm2.bam <span class="dt">\</span></span>
+<span id="cb15-14"><a href="structural-variant-calling.html#cb15-14" tabindex="-1"></a>    <span class="va">${VARIETY}</span>.svsig.gz</span>
+<span id="cb15-15"><a href="structural-variant-calling.html#cb15-15" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb15-16"><a href="structural-variant-calling.html#cb15-16" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="structural-variant-calling.html#cb15-17" tabindex="-1"></a><span class="ex">pbsv</span> call <span class="dt">\</span></span>
+<span id="cb15-18"><a href="structural-variant-calling.html#cb15-18" tabindex="-1"></a>  <span class="at">--num-threads</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span> <span class="dt">\</span></span>
+<span id="cb15-19"><a href="structural-variant-calling.html#cb15-19" tabindex="-1"></a>  clean_heinz.fasta <span class="dt">\</span></span>
+<span id="cb15-20"><a href="structural-variant-calling.html#cb15-20" tabindex="-1"></a>  CKH.svsig.gz MT1.svsig.gz MT3.svsig.gz <span class="dt">\</span></span>
+<span id="cb15-21"><a href="structural-variant-calling.html#cb15-21" tabindex="-1"></a>  merged.pbsv.heinz.vcf</span></code></pre></div>
+</div>
+</div>
+<div id="secondary-track-ngmlr-sniffles2-concordance" class="section level2 hasAnchor" number="3.2">
+<h2><span class="header-section-number">3.2</span> Secondary Track — ngmlr + Sniffles2 (concordance)<a href="structural-variant-calling.html#secondary-track-ngmlr-sniffles2-concordance" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>See the Secondary Alignment — ngmlr section above for the ngmlr alignment step
+and the legacy-samtools sort fix required for its SAM output.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="structural-variant-calling.html#cb16-1" tabindex="-1"></a><span class="co">##single cmd</span></span>
+<span id="cb16-2"><a href="structural-variant-calling.html#cb16-2" tabindex="-1"></a><span class="ex">sniffles</span> <span class="at">--input</span> CKH.sorted.bam <span class="at">--snf</span> CKH.snf <span class="dt">\</span></span>
+<span id="cb16-3"><a href="structural-variant-calling.html#cb16-3" tabindex="-1"></a>  <span class="at">--reference</span> clean_heinz.fasta <span class="at">--threads</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span></span>
+<span id="cb16-4"><a href="structural-variant-calling.html#cb16-4" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="structural-variant-calling.html#cb16-5" tabindex="-1"></a><span class="co">##batch cmd</span></span>
+<span id="cb16-6"><a href="structural-variant-calling.html#cb16-6" tabindex="-1"></a><span class="va">VARIETIES</span><span class="op">=</span><span class="va">(</span><span class="st">&quot;CKH&quot;</span> <span class="st">&quot;MT1&quot;</span> <span class="st">&quot;MT3&quot;</span><span class="va">)</span></span>
+<span id="cb16-7"><a href="structural-variant-calling.html#cb16-7" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="structural-variant-calling.html#cb16-8" tabindex="-1"></a><span class="cf">for</span> VARIETY <span class="kw">in</span> <span class="st">&quot;</span><span class="va">${VARIETIES</span><span class="op">[@]</span><span class="va">}</span><span class="st">&quot;</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb16-9"><a href="structural-variant-calling.html#cb16-9" tabindex="-1"></a>  <span class="ex">sniffles</span> <span class="at">--input</span> <span class="va">${VARIETY}</span>.sorted.bam <span class="at">--snf</span> <span class="va">${VARIETY}</span>.snf <span class="dt">\</span></span>
+<span id="cb16-10"><a href="structural-variant-calling.html#cb16-10" tabindex="-1"></a>    <span class="at">--reference</span> clean_heinz.fasta <span class="at">--threads</span> <span class="op">&lt;</span>threads<span class="op">&gt;</span></span>
+<span id="cb16-11"><a href="structural-variant-calling.html#cb16-11" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+</div>
+<div id="concordance-between-the-two-tracks" class="section level2 hasAnchor" number="3.3">
+<h2><span class="header-section-number">3.3</span> Concordance Between the Two Tracks<a href="structural-variant-calling.html#concordance-between-the-two-tracks" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>SVs rarely land on identical coordinates across callers (unlike SNPs), so
+intersection uses a breakpoint-distance window rather than exact position
+matching:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="structural-variant-calling.html#cb17-1" tabindex="-1"></a><span class="ex">SURVIVOR</span> merge vcf_list.txt 1000 2 1 1 0 30 merged_survivor.heinz.vcf</span></code></pre></div>
+</div>
+<div id="filtering" class="section level2 hasAnchor" number="3.4">
+<h2><span class="header-section-number">3.4</span> Filtering<a href="structural-variant-calling.html#filtering" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<ul>
+<li><code>SUPPORT &gt;= 3–5</code> supporting reads</li>
+<li><code>SVLEN &gt;= 50 bp</code> (separates from indels already captured by DeepVariant/Clair3)</li>
+<li>Consider tiering <code>PRECISE</code> vs. <code>IMPRECISE</code> calls separately</li>
+</ul>
+</div>
+<div id="statistics" class="section level2 hasAnchor" number="3.5">
+<h2><span class="header-section-number">3.5</span> Statistics<a href="structural-variant-calling.html#statistics" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="structural-variant-calling.html#cb18-1" tabindex="-1"></a><span class="co">##get bam stats</span></span>
+<span id="cb18-2"><a href="structural-variant-calling.html#cb18-2" tabindex="-1"></a><span class="ex">samtools</span> flagstat MT1_aln.bam <span class="op">&gt;</span> MT1_aln.stats</span>
+<span id="cb18-3"><a href="structural-variant-calling.html#cb18-3" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="structural-variant-calling.html#cb18-4" tabindex="-1"></a><span class="co">##Count only primary alignments (excludes supplementary &amp; secondary)</span></span>
+<span id="cb18-5"><a href="structural-variant-calling.html#cb18-5" tabindex="-1"></a><span class="ex">samtools</span> view <span class="at">-c</span> <span class="at">-F</span> 2304 MT1_aln.bam</span>
+<span id="cb18-6"><a href="structural-variant-calling.html#cb18-6" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="structural-variant-calling.html#cb18-7" tabindex="-1"></a><span class="co">#to list files in singularity</span></span>
+<span id="cb18-8"><a href="structural-variant-calling.html#cb18-8" tabindex="-1"></a><span class="ex">singularity</span> exec deepvariant_1.6.1.sif ls /opt/deepvariant/bin/</span>
+<span id="cb18-9"><a href="structural-variant-calling.html#cb18-9" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="structural-variant-calling.html#cb18-10" tabindex="-1"></a><span class="co">##obtain stats from vcf file</span></span>
+<span id="cb18-11"><a href="structural-variant-calling.html#cb18-11" tabindex="-1"></a><span class="ex">bcftools</span> stats MT1.vcf.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;^SN&quot;</span></span>
+<span id="cb18-12"><a href="structural-variant-calling.html#cb18-12" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="structural-variant-calling.html#cb18-13" tabindex="-1"></a><span class="co">##calculate stats of concordance file</span></span>
+<span id="cb18-14"><a href="structural-variant-calling.html#cb18-14" tabindex="-1"></a><span class="ex">bcftools</span> stats 0002.vcf.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;^SN&quot;</span> <span class="op">&gt;</span> stats.txt</span>
+<span id="cb18-15"><a href="structural-variant-calling.html#cb18-15" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="structural-variant-calling.html#cb18-16" tabindex="-1"></a><span class="co">##retrieve number of snps</span></span>
+<span id="cb18-17"><a href="structural-variant-calling.html#cb18-17" tabindex="-1"></a><span class="ex">bcftools</span> stats 0001.vcf.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;number of SNPs&quot;</span></span>
+<span id="cb18-18"><a href="structural-variant-calling.html#cb18-18" tabindex="-1"></a></span>
+<span id="cb18-19"><a href="structural-variant-calling.html#cb18-19" tabindex="-1"></a><span class="co">##filter</span></span>
+<span id="cb18-20"><a href="structural-variant-calling.html#cb18-20" tabindex="-1"></a><span class="ex">bcftools</span> filter <span class="at">-e</span> <span class="st">&#39;QUAL &lt; 30 || DP &lt; 10&#39;</span> 0002.vcf.gz <span class="at">-O</span> z <span class="at">-o</span> MT1_cc.vcf.gz</span>
+<span id="cb18-21"><a href="structural-variant-calling.html#cb18-21" tabindex="-1"></a></span>
+<span id="cb18-22"><a href="structural-variant-calling.html#cb18-22" tabindex="-1"></a><span class="co">##for viewing</span></span>
+<span id="cb18-23"><a href="structural-variant-calling.html#cb18-23" tabindex="-1"></a><span class="co"># Count total variants</span></span>
+<span id="cb18-24"><a href="structural-variant-calling.html#cb18-24" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="at">-H</span> MT1_filtered.vcf.gz <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+<span id="cb18-25"><a href="structural-variant-calling.html#cb18-25" tabindex="-1"></a></span>
+<span id="cb18-26"><a href="structural-variant-calling.html#cb18-26" tabindex="-1"></a><span class="co"># View only SNPs</span></span>
+<span id="cb18-27"><a href="structural-variant-calling.html#cb18-27" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="at">-v</span> snps MT1_filtered.vcf.gz <span class="kw">|</span> <span class="fu">less</span></span>
+<span id="cb18-28"><a href="structural-variant-calling.html#cb18-28" tabindex="-1"></a></span>
+<span id="cb18-29"><a href="structural-variant-calling.html#cb18-29" tabindex="-1"></a><span class="co"># View only indels</span></span>
+<span id="cb18-30"><a href="structural-variant-calling.html#cb18-30" tabindex="-1"></a><span class="ex">bcftools</span> view <span class="at">-v</span> indels MT1_filtered.vcf.gz <span class="kw">|</span> <span class="fu">less</span></span>
+<span id="cb18-31"><a href="structural-variant-calling.html#cb18-31" tabindex="-1"></a></span>
+<span id="cb18-32"><a href="structural-variant-calling.html#cb18-32" tabindex="-1"></a><span class="co"># Quick stats summary</span></span>
+<span id="cb18-33"><a href="structural-variant-calling.html#cb18-33" tabindex="-1"></a><span class="ex">bcftools</span> stats MT1_filtered.vcf.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;^SN&quot;</span></span></code></pre></div>
+</div>
+<div id="notes-on-interpretation" class="section level2 hasAnchor" number="3.6">
+<h2><span class="header-section-number">3.6</span> Notes on Interpretation<a href="structural-variant-calling.html#notes-on-interpretation" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<ul>
+<li><strong>GT is authoritative over ALT</strong> for allele determination in single-sample
+VCFs — phantom ALT alleles can arise from repeat-collapsed reference
+assembly artifacts.</li>
+<li><strong>NA in a joined sample column means “matches reference,”</strong> not missing data.</li>
+<li>A high multiallelic site count in what should be a single-sample VCF likely
+indicates the file is actually a merged multi-sample VCF.</li>
+<li>HiFi’s ~99.9% raw accuracy is mostly a <em>substitution</em>-error improvement;
+residual error remains disproportionately indel-based, especially in
+homopolymer runs. True biological coding-region indels cluster at multiples
+of 3 bp (frame-preserving); artifact indels cluster at 1–2 bp in homopolymer
+contexts — a useful QC check with no direct SNP-Ts/Tv equivalent.</li>
+</ul>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="snp-indel-calling.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": false,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": null,
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "section",
+    "scroll_highlight": true
+  }
+});
+});
+</script>
+
+</body>
+
+</html>
